@@ -7,6 +7,8 @@
 
 #ifdef _WIN32
     #include<windows.h>
+
+    #define strtok_r(A,B,C) strtok_s(A,B,C)
     #define NOOFTHREADS 4
 #else
     #include<pthread.h>
