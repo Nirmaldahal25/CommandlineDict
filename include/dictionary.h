@@ -10,6 +10,8 @@
     #include <share.h>
     #include <errno.h>
     #include <stdint.h>
+#else
+
 #endif
 
     // typedef struct Results

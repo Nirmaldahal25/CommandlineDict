@@ -86,7 +86,7 @@ void fileData(char buff[], int *size)
     *size = getline(&line, &len, filepointer );
 #else
     flockfile(filepointer);
-    *size = getline(&line, &len, filepointer );
+    *size = getline(&line, &len, filepointer);
     funlockfile(filepointer);
 #endif
     if(*size != -1) 

@@ -10,71 +10,51 @@
     #define NOOFTHREADS 4
 #else
     #include<pthread.h>
+    #include<semaphore.h>
+    sem_t locker;
     int count = 4;
 #endif
 
 #define SIZE 20000
 
 bool obtained = true;
-char dictionaryword[50], hint[50];
-char description[2048];
+char dictionaryword[50];
+char description[SIZE];
 
-void createMatchingWord(char* desc)
+void getMeaning(char* desc)
 {
     obtained = false;
-    strncpy(description,desc, sizeof(description));
+    int size = strlen(description);
+    strncpy(description + size,desc, SIZE - size);
 }
 
-int cDel(char *ptr, char _del)
+void tokenizeTheLine(char* buff)
 {
-    int count = 0;
-    for(int i = 0; i< strlen(ptr); i++)
-    {
-        if(ptr[i] == _del)
-        {
-            count++;
-        }
-    }
-    return count;
-}
-
-void printbyParts(char* buff)
-{
-    char * ptr = strtok(buff, ":");
+    char * ptr = strtok_r(buff, ":", &buff);
     removeChar(ptr, '"');
     if(strcmp(dictionaryword, ptr)!=0)
     {
         return;
     }
-    while(ptr != NULL)
+    while((ptr = strtok_r(buff, ":", &buff)))
     {
-        ptr = strtok(NULL, "\",\n");
-        createMatchingWord(ptr); 
-        ptr = strtok(NULL, "\",\n");
+        getMeaning(ptr); 
     }
 }
 
 #ifdef _WIN32
-    DWORD WINAPI getMeaning()
+    DWORD WINAPI searchDictionary()
 #else
-    void *getMeaning()
+    void *searchDictionary()
 #endif
 {
     char buff[SIZE];
     int size = 0;
     while(obtained){
         fileData(buff, &size);
-        if(size > SIZE)
-        {
-            printf("size exceeded the buffer");
-        }
-        if(size == -1){
-            obtained = false;
-            continue;
-        }
+        if(size < 0) break;
         memset(buff+size,0,SIZE-size);
-        printbyParts(buff);
-        size = 0;
+        tokenizeTheLine(buff);
     }
     return 0;
 }
@@ -89,6 +69,7 @@ int main(int argc,char *argv[])
 #endif
 
     argparser_parse(&argparse);
+
     if(strlen(dictionaryword) == 0)
     {
         printf("A word must be inserted. Use help for commands\n");
@@ -101,6 +82,7 @@ int main(int argc,char *argv[])
     openFile();
 
 #ifdef _WIN32
+
     HANDLE threads[NOOFTHREADS];
     DWORD threadidArray[NOOFTHREADS];
     for(DWORD i =0; i<NOOFTHREADS; i++)
@@ -108,27 +90,44 @@ int main(int argc,char *argv[])
     threads[i] = CreateThread( 
             NULL,                   // default security attributes
             0,                      // use default stack size  
-            getMeaning,       // thread function name
+            searchDictionary,       // thread function name
             NULL,          // argument to thread function 
             0,                      // use default creation flags 
             &threadidArray[i]);
     }
     WaitForMultipleObjects(NOOFTHREADS, threads,TRUE,INFINITE);
 #else
+
+
     pthread_t threads[count];
     for(int i = 0; i < count ; i++)
     {
-        pthread_create(&threads[i],NULL, getMeaning, NULL);
+        pthread_create(&threads[i],NULL, searchDictionary, NULL);
     }
     for(int i = 0; i < count;i++)
     {
         pthread_join(threads[i],NULL);
     }
-    
 #endif
+
+
+
     printf("%s :  ",dictionaryword);
 
-    if(strlen(description) != 0) printf("%s \n", description);
+    if(strlen(description) != 0)
+    {
+        for(int i =0; i<strlen(description); i++ )
+        {
+            if(description[i] == '\\' && description[i+1]=='n')
+            {
+                printf("\n");
+                i = i + 1;
+                continue;
+            }
+            printf("%c",description[i]);
+        }
+        printf("\n");
+    }
 
     closeFile();
 }
