@@ -1,0 +1,6 @@
+[submodule "argparse"]
+	path = argparse
+	url = https://github.com/cofyc/argparse.git
+[submodule "argparser"]
+	path = argparser
+	url = https://github.com/fmenozzi/argparser.git
