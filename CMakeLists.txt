@@ -9,6 +9,10 @@ include_directories(WebstersEnglishDictionary)
 link_directories(argparser)
 add_library(argparser STATIC argparser/c/argparser.h argparser/c/argparser.c)
 
+if(MSVC)
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+endif()
+
 set(HEADER_FILE include/dictionary.h)
 set(SOURCE_FILE dictionary.c)
 

@@ -6,6 +6,12 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#ifdef _WIN32
+    #include <share.h>
+    #include <errno.h>
+    #include <stdint.h>
+#endif
+
     // typedef struct Results
     // {
     //     char *word;

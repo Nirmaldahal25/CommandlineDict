@@ -7,14 +7,11 @@
 
 #ifdef _WIN32
     #include<windows.h>
-
-    typedef HANDLE threads;
+    #define NOOFTHREADS 4
 #else
     #include<pthread.h>
-
-    typedef pthread_t threads;
+    int count = 4;
 #endif
-
 
 #define SIZE 20000
 
@@ -25,26 +22,43 @@ char description[2048];
 void createMatchingWord(char* desc)
 {
     obtained = false;
-    strcpy(description,desc);
+    strncpy(description,desc, sizeof(description));
+}
+
+int cDel(char *ptr, char _del)
+{
+    int count = 0;
+    for(int i = 0; i< strlen(ptr); i++)
+    {
+        if(ptr[i] == _del)
+        {
+            count++;
+        }
+    }
+    return count;
 }
 
 void printbyParts(char* buff)
 {
     char * ptr = strtok(buff, ":");
     removeChar(ptr, '"');
-    if(strncmp(dictionaryword, ptr, strlen(dictionaryword))!=0)
+    if(strcmp(dictionaryword, ptr)!=0)
     {
         return;
     }
     while(ptr != NULL)
     {
-        ptr = strtok(NULL, ":");
+        ptr = strtok(NULL, "\",\n");
         createMatchingWord(ptr); 
-        ptr = strtok(NULL, ":");
+        ptr = strtok(NULL, "\",\n");
     }
 }
 
-void *getMeaning()
+#ifdef _WIN32
+    DWORD WINAPI getMeaning()
+#else
+    void *getMeaning()
+#endif
 {
     char buff[SIZE];
     int size = 0;
@@ -62,33 +76,56 @@ void *getMeaning()
         printbyParts(buff);
         size = 0;
     }
-    return NULL;
+    return 0;
 }
 
 int main(int argc,char *argv[])
 {
     argparser argparse = argparser_create(argc, argv,PARSEMODE_LENIENT);
-    int count = 4;
     argparser_add(&argparse, "-w", "--word", ARGTYPE_STRING,dictionaryword,"Find the meaning of the word");
-    argparser_add(&argparse, "-i", "--hint", ARGTYPE_STRING,hint,"Provide Hint"); 
+    // argparser_add(&argparse, "-i", "--hint", ARGTYPE_STRING,hint,"Provide Hint"); 
+#ifndef _WIN32
     argparser_add(&argparse, "-c", "--threads", ARGTYPE_INT,&count,"No of Threads Count"); 
-    argparser_parse(&argparse);
+#endif
 
-    for(int i=0;i<strlen(dictionaryword);i++)
+    argparser_parse(&argparse);
+    if(strlen(dictionaryword) == 0)
     {
-        dictionaryword[i] = tolower(dictionaryword[i]);
+        printf("A word must be inserted. Use help for commands\n");
+        exit(EXIT_SUCCESS);
     }
-    pthread_t threads[count];
+    for(int i=0;i<strnlen(dictionaryword,50);i++)
+    {
+        dictionaryword[i] = (char)tolower(dictionaryword[i]);
+    }
     openFile();
+
+#ifdef _WIN32
+    HANDLE threads[NOOFTHREADS];
+    DWORD threadidArray[NOOFTHREADS];
+    for(DWORD i =0; i<NOOFTHREADS; i++)
+    {
+    threads[i] = CreateThread( 
+            NULL,                   // default security attributes
+            0,                      // use default stack size  
+            getMeaning,       // thread function name
+            NULL,          // argument to thread function 
+            0,                      // use default creation flags 
+            &threadidArray[i]);
+    }
+    WaitForMultipleObjects(NOOFTHREADS, threads,TRUE,INFINITE);
+#else
+    pthread_t threads[count];
     for(int i = 0; i < count ; i++)
     {
         pthread_create(&threads[i],NULL, getMeaning, NULL);
     }
-    
     for(int i = 0; i < count;i++)
     {
         pthread_join(threads[i],NULL);
     }
+    
+#endif
     printf("%s :  ",dictionaryword);
 
     if(strlen(description) != 0) printf("%s \n", description);
