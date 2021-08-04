@@ -16,11 +16,9 @@ endif()
 set(HEADER_FILE include/dictionary.h)
 set(SOURCE_FILE dictionary.c)
 
-set(THREADS_PREFER_PTHREAD_FLAG ON)
-find_package(Threads REQUIRED)
 add_executable(${PROJECT_NAME} main.c ${HEADER_FILE} ${SOURCE_FILE})
 
-target_link_libraries(${PROJECT_NAME} argparser Threads::Threads )
+target_link_libraries(${PROJECT_NAME} argparser)
 
 # file(MAKE_DIRECTORY $<TARGET_FILE_DIR:${PROJECT_NAME}>/WebstersEnglishDictionary)
 add_custom_command(
