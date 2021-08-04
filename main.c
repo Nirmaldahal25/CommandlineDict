@@ -6,13 +6,7 @@
 #include "dictionary.h"
 
 #ifdef _WIN32
-    #include<windows.h>
-
     #define strtok_r(A,B,C) strtok_s(A,B,C)
-    #define NOOFTHREADS 4
-#else
-    #include<pthread.h>
-    int count = 4;
 #endif
 
 #define SIZE 20000
@@ -42,11 +36,8 @@ void tokenizeTheLine(char* buff)
     }
 }
 
-#ifdef _WIN32
-    DWORD WINAPI searchDictionary()
-#else
-    void *searchDictionary()
-#endif
+
+void searchDictionary()
 {
     char buff[SIZE];
     int size = 0;
@@ -56,7 +47,6 @@ void tokenizeTheLine(char* buff)
         memset(buff+size,0,SIZE-size);
         tokenizeTheLine(buff);
     }
-    return 0;
 }
 
 int main(int argc,char *argv[])
@@ -64,9 +54,6 @@ int main(int argc,char *argv[])
     argparser argparse = argparser_create(argc, argv,PARSEMODE_LENIENT);
     argparser_add(&argparse, "-w", "--word", ARGTYPE_STRING,dictionaryword,"Find the meaning of the word");
     // argparser_add(&argparse, "-i", "--hint", ARGTYPE_STRING,hint,"Provide Hint"); 
-#ifndef _WIN32
-    argparser_add(&argparse, "-c", "--threads", ARGTYPE_INT,&count,"No of Threads Count"); 
-#endif
 
     argparser_parse(&argparse);
 
@@ -80,38 +67,7 @@ int main(int argc,char *argv[])
         dictionaryword[i] = (char)tolower(dictionaryword[i]);
     }
     openFile();
-
-#ifdef _WIN32
-
-    HANDLE threads[NOOFTHREADS];
-    DWORD threadidArray[NOOFTHREADS];
-    for(DWORD i =0; i<NOOFTHREADS; i++)
-    {
-    threads[i] = CreateThread( 
-            NULL,                   // default security attributes
-            0,                      // use default stack size  
-            searchDictionary,       // thread function name
-            NULL,          // argument to thread function 
-            0,                      // use default creation flags 
-            &threadidArray[i]);
-    }
-    WaitForMultipleObjects(NOOFTHREADS, threads,TRUE,INFINITE);
-#else
-
-
-    pthread_t threads[count];
-    for(int i = 0; i < count ; i++)
-    {
-        pthread_create(&threads[i],NULL, searchDictionary, NULL);
-    }
-    for(int i = 0; i < count;i++)
-    {
-        pthread_join(threads[i],NULL);
-    }
-#endif
-
-
-
+    searchDictionary();
     printf("%s :  ",dictionaryword);
 
     if(strlen(description) != 0)
