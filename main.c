@@ -12,8 +12,6 @@
     #define NOOFTHREADS 4
 #else
     #include<pthread.h>
-    #include<semaphore.h>
-    sem_t locker;
     int count = 4;
 #endif
 
