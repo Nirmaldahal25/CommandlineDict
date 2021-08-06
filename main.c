@@ -80,9 +80,18 @@ int main(int argc,char *argv[])
                 i = i + 1;
                 continue;
             }
+            if(isdigit(description[i]) && description[i+1] == '.')
+            {
+                printf("\n\n");
+            }
+            if(description[i]=='\\' && description[i+1] == '"') continue;
             printf("%c",description[i]);
         }
         printf("\n");
+    }
+    else
+    {
+        printf("No results Found");
     }
 
     closeFile();
